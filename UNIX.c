@@ -30,15 +30,23 @@ int main(void)
 
 	while (1)
 	{
-	printf("$ ");
-	read_chars = getline(&buffer, &bufsize, stdin);
+	command = (char *)malloc(bufsize * sizeof(char));
+	if (!command)
+	{
+	perror("malloc");
+	exit(EXIT_FAILURE);
+	}
+	printf("#cisfun$ ");
+	fflush(stdout);
 
 	if (read_chars == -1)
 	{
 	if (feof(stdin))
 	{
 	printf("\n");
-	break;
+	free(command);
+	exit(EXIT_SUCCESS);
+	
 	}
 	perror("getline");
 	exit(EXIT_FAILURE);
@@ -46,12 +54,10 @@ int main(void)
 
 	if (read_chars > 0 && buffer[read_chars - 1] == '\n')
 	{
-	buffer[read_chars - 1] = '\0';
+	command[read_chars - 1] = '\0';
 	}
-	 args[0] = buffer;
-	args[1] = NULL;
 
-	pid_t child_pid = fork();
+	pid_t child_ pid = fork();
 	if (child_pid == -1)
 	{
 	perror("fork");
@@ -59,18 +65,22 @@ int main(void)
 	}
 	if (child_pid == 0)
         {
-	if (execve(args[0], args, NULL) == -1)
+	exec_status = execve(command, NULL, environ);
+
+	if (exec_status == -1)
 	{
 	perror("execve");
+	free(command);
 	exit(EXIT_FAILURE);
 	}
 	}
 	else
 	{
 	waitpid(child_pid, &status, 0);
+	if (status != 0)
+		fprint(stderr, "./shell: No such file or directory\n");
 	}
+	free(command);
 	}
-
-	free(buffer);
 	return (0);
 }
